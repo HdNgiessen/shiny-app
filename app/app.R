@@ -1,33 +1,48 @@
-# Load the required libraries
 library(shiny)
-library(leaflet)
 
+# Sample Data
+data <- data.frame(
+  Name = c("Alice", "Bob", "Charlie", "David"),
+  Age = c(25, 30, 35, 40)
+)
 
 # Define the UI
 ui <- fluidPage(
-  titlePanel("Brandenburg Gate Map"),
-  leafletOutput("brandenburg_map")
+  titlePanel("Shiny Table with Filter"),
+  sidebarLayout(
+    sidebarPanel(
+      textInput("search_input", "Filter by Name", ""),
+      br(),
+      actionButton("reset_btn", "Reset Filter")
+    ),
+    mainPanel(
+      tableOutput("data_table")
+    )
+  )
 )
 
 # Define the server
-server <- function(input, output, session) {
+server <- function(input, output) {
+  # Filter the data based on the search input
+  filtered_data <- reactive({
+    filter_str <- input$search_input
+    if (nchar(filter_str) == 0) {
+      data
+    } else {
+      data[data$Name == filter_str, ]
+    }
+  })
   
-  output$brandenburg_map <- renderLeaflet({
-    leaflet() %>%
-      addTiles() %>%  # Add a default tile layer
-      addMarkers(
-        lng = 13.377704,
-        lat = 52.516275,
-        popup = "Brandenburg Gate"
-      )
+  # Render the table
+  output$data_table <- renderTable({
+    filtered_data()
+  })
+  
+  # Reset the filter
+  observeEvent(input$reset_btn, {
+    updateTextInput(session, "search_input", value = "")
   })
 }
 
 # Run the Shiny app
 shinyApp(ui, server)
-
-
-# deploy app with shiny live
-# setwd("~/Insync/thhaase.soz@gmail.com/GoogleDrive/_1_Projects/T14 Haus der Nachhaltigkeit 2/shiny app")
-# library(shinylive)
-# shinylive::export(appdir = "app", destdir = "docs")
